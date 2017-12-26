@@ -9,6 +9,7 @@ namespace HeroMonsterChallenge
 {
     public partial class index : System.Web.UI.Page
     {
+        private Random random;
         Character jedi = new Character();
         Character sith = new Character();
         Dice jediDice = new Dice();
@@ -26,6 +27,7 @@ namespace HeroMonsterChallenge
 
         protected void btnAttack_Click(object sender, EventArgs e)
         {
+            random = new Random();
             lblResult.Text += displayResult();
         }
 
@@ -113,13 +115,9 @@ namespace HeroMonsterChallenge
 
                 retrieveInfo();
 
-                int lukeAttack = jedi.Attack(jediDice);
+                int lukeAttack = jedi.Attack(jediDice, random);
                 int vaderDefend = sith.Defend(lukeAttack);
-                int vaderAttack = sith.Attack(sithDice);
-
-                while (vaderAttack == lukeAttack)
-                    vaderAttack = sith.Attack(sithDice);
-
+                int vaderAttack = sith.Attack(sithDice, random);
                 int lukeDefend = jedi.Defend(vaderAttack);
 
                 saveHealth(lukeDefend, vaderDefend);
@@ -131,8 +129,8 @@ namespace HeroMonsterChallenge
                 else if (jedi.Health <= 0 || sith.Health <= 0)
                     return defeat(jedi, sith);
                 else
-                    return String.Format("{6} {0} attacked {1} and inflicted {2}% damage. {1}'s Health: {3}%.<br>" +
-                        "{1} attacked {0} and inflicted {4}% damage. {0}'s Health: {5}%.<br><br>",
+                    return String.Format("{6} <br><br>{0} attacked {1} and inflicted {2}% damage. {1}'s Health: {3}%.<br>" +
+                        "{1} attacked {0} and inflicted {4}% damage. {0}'s Health: {5}%.",
                         jedi.Name, sith.Name, lukeAttack, vaderDefend, vaderAttack, lukeDefend, bonus);
             }
             while (jedi.Health > 0 && sith.Health > 0);
@@ -141,9 +139,9 @@ namespace HeroMonsterChallenge
         private string defeat(Character jedi, Character sith)
         {
             if (jedi.Health <= 0)
-                return String.Format("{0} attacked {1} and killed him. {0} WINS !!!", sith.Name, jedi.Name);
+                return String.Format("<br><br>{0} attacked {1} and killed him. {0} WINS !!!", sith.Name, jedi.Name);
             else if(sith.Health <= 0)
-                return String.Format("{0} attacked {1} and killed him. {0} WINS !!!", jedi.Name, sith.Name);
+                return String.Format("<br><br>{0} attacked {1} and killed him. {0} WINS !!!", jedi.Name, sith.Name);
             else
                 return "";
         }
@@ -152,24 +150,24 @@ namespace HeroMonsterChallenge
         {
             if (jedi.AttackBonus == true)
             {
-                int lukeAttack = jedi.Attack(jediDice);
+                int lukeAttack = jedi.Attack(jediDice, random);
                 int vaderDefend = sith.Defend(lukeAttack);
                 jedi.AttackBonus = false;
                 ViewState.Add("sithHealth", vaderDefend);
                 ViewState.Add("jediBonus", jedi.AttackBonus);
                 return String.Format("Bonus Attack -- {0} attacked {1} and inflicted " +
-                    "{2}% damage. {1}'s Health: {3}%.<br><br>",
+                    "{2}% damage. {1}'s Health: {3}%.",
                     jedi.Name, sith.Name, lukeAttack, vaderDefend);
             }
             else if (sith.AttackBonus == true)
             {
-                int vaderAttack = sith.Attack(sithDice);
+                int vaderAttack = sith.Attack(sithDice, random);
                 int lukeDefend = jedi.Defend(vaderAttack);
                 sith.AttackBonus = false;
                 ViewState.Add("jediHealth", lukeDefend);
                 ViewState.Add("sithBonus", sith.AttackBonus);
                 return String.Format("Bonus Attack -- {0} attacked {1} and inflicted " +
-                    "{2}% damage. {1}'s Health: {3}%.<br><br>",
+                    "{2}% damage. {1}'s Health: {3}%.",
                     sith.Name, jedi.Name, vaderAttack, lukeDefend);
             }
             else
@@ -185,10 +183,10 @@ namespace HeroMonsterChallenge
         public int DamageMaximum { get; set; }
         public bool AttackBonus { get; set; }
 
-        public int Attack(Dice dice)
+        public int Attack(Dice dice, Random random)
         {
             dice.Sides = this.DamageMaximum;
-            return dice.Roll();
+            return dice.Roll(random);
         }
 
         public int Defend(int damage)
@@ -199,12 +197,13 @@ namespace HeroMonsterChallenge
 
     class Dice
     {
-        Random random = new Random();
+        private Random _random;
         public int Sides { get; set; }
 
-        public int Roll()
+        public int Roll(Random random)
         {
-            return random.Next(this.Sides);
+            _random = random;
+            return _random.Next(this.Sides);
         }
     }
 }
